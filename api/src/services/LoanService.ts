@@ -8,9 +8,9 @@ export function calculateExpectedReturnDate(loanDate: Date): Date {
     
     const day = returnDate.getDay();
     if (day === 6) {
-        returnDate.setDate(returnDate.getDate() + 2); // -> Monday
+        returnDate.setDate(returnDate.getDate() + 2); 
     } else if (day === 0) {
-        returnDate.setDate(returnDate.getDate() + 1); // -> Monday
+        returnDate.setDate(returnDate.getDate() + 1); 
     }
     
     return returnDate;
@@ -31,7 +31,17 @@ export function calculateFine(expectedReturnDate: Date, returnDate: Date): numbe
 }
 
 class LoanService {
+    private async updateOverdueLoans(): Promise<void> {
+        await pool.query(`
+            UPDATE loans
+            SET status = 'extraviado'
+            WHERE status = 'emprestado' 
+              AND expected_return_date < CURRENT_DATE
+        `);
+    }
+
     async findAll(): Promise<Loan[]> {
+        await this.updateOverdueLoans();
         const result = await pool.query(`
             SELECT id, book_id AS "bookId", user_name AS "userName", 
                    loan_date AS "loanDate", expected_return_date AS "expectedReturnDate", 
@@ -50,6 +60,7 @@ class LoanService {
     }
 
     async findById(id: string): Promise<Loan | undefined> {
+        await this.updateOverdueLoans();
         const result = await pool.query(`
             SELECT id, book_id AS "bookId", user_name AS "userName", 
                    loan_date AS "loanDate", expected_return_date AS "expectedReturnDate", 
