@@ -21,6 +21,11 @@ export async function createLoan(loan: { bookId: string; userName: string; loanD
     return data;
 }
 
+export async function updateLoan(id: string, loan: { bookId: string; userName: string; loanDate: string }): Promise<Loan> {
+    const { data } = await Api.put(`/loans/${id}`, loan);
+    return data;
+}
+
 export async function updateLoanStatus(id: string, status: "devolvido" | "extraviado"): Promise<Loan> {
     const { data } = await Api.patch(`/loans/${id}/status`, { status });
     return data;

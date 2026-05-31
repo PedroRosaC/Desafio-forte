@@ -6,7 +6,6 @@ export function calculateExpectedReturnDate(loanDate: Date): Date {
     const returnDate = new Date(loanDate.getTime());
     returnDate.setDate(returnDate.getDate() + 30);
     
-    // 0 = Domingoi, 6 = Saturday
     const day = returnDate.getDay();
     if (day === 6) {
         returnDate.setDate(returnDate.getDate() + 2); // -> Monday
@@ -24,8 +23,6 @@ export function calculateFine(expectedReturnDate: Date, returnDate: Date): numbe
     const timeDiff = returned.getTime() - expected.getTime();
     const diffDays = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
     
-    // Se a devolução ocorrer com até um dia de atraso, não haverá multa.
-    // Após um dia de atraso, multa será R$0,50 por dia (incluindo o 1o dia).
     if (diffDays <= 1) {
         return 0;
     } else {
@@ -74,7 +71,6 @@ class LoanService {
 
     async create(data: { bookId: string; userName: string; loanDate: string }): Promise<Loan> {
         const id = uuidv4();
-        // Evitar mudança de fuso horário separando ano, mês e dia manualmente
         const [year, month, day] = data.loanDate.split('T')[0].split('-').map(Number);
         const loanDate = new Date(year, month - 1, day);
         
@@ -120,6 +116,31 @@ class LoanService {
         `, [finalStatus, returnDate, id]);
         
         return { ...loan, status: finalStatus as any, returnDate, fine: calculateFine(new Date(loan.expectedReturnDate), returnDate) };
+    }
+
+    async update(id: string, data: { bookId?: string; userName?: string; loanDate?: string }): Promise<Loan | null> {
+        const loan = await this.findById(id);
+        if (!loan) return null;
+        
+        let newExpectedReturnDate = loan.expectedReturnDate;
+        let newLoanDate = loan.loanDate;
+
+        if (data.loanDate) {
+            const [year, month, day] = data.loanDate.split('T')[0].split('-').map(Number);
+            newLoanDate = new Date(year, month - 1, day) as any;
+            newExpectedReturnDate = calculateExpectedReturnDate(newLoanDate as any);
+        }
+
+        const updatedBookId = data.bookId || loan.bookId;
+        const updatedUserName = data.userName || loan.userName;
+
+        await pool.query(`
+            UPDATE loans 
+            SET book_id = $1, user_name = $2, loan_date = $3, expected_return_date = $4
+            WHERE id = $5
+        `, [updatedBookId, updatedUserName, newLoanDate, newExpectedReturnDate, id]);
+
+        return this.findById(id);
     }
 
     async delete(id: string): Promise<boolean> {

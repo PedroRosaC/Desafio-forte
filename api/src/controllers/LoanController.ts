@@ -40,6 +40,19 @@ export const updateLoanStatus = async (req: Request, res: Response) => {
     res.json(updated);
 };
 
+export const updateLoan = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { bookId, userName, loanDate } = req.body;
+    
+    try {
+        const updated = await loanService.update(id, { bookId, userName, loanDate });
+        if (!updated) return res.status(404).json({ message: "Loan not found" });
+        res.json(updated);
+    } catch (error) {
+        res.status(500).json({ message: "Error updating loan" });
+    }
+};
+
 export const deleteLoan = async (req: Request, res: Response) => {
     const { id } = req.params;
     const ok = await loanService.delete(id);

@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Table, Button, Form, Modal } from "react-bootstrap";
-import { getLoans, createLoan, deleteLoan, updateLoanStatus, Loan } from "../../services/LoanService";
+import { getLoans, createLoan, deleteLoan, updateLoanStatus, updateLoan, Loan } from "../../services/LoanService";
 import { getBooks, Book } from "../../services/BookService";
 
 export const LoansConfig = () => {
     const [loans, setLoans] = useState<Loan[]>([]);
     const [books, setBooks] = useState<Book[]>([]);
     const [showModal, setShowModal] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [bookId, setBookId] = useState("");
     const [userName, setUserName] = useState("");
     const [loanDate, setLoanDate] = useState("");
@@ -22,10 +23,26 @@ export const LoansConfig = () => {
         load();
     }, []);
 
-    const handleCreate = async () => {
-        await createLoan({ bookId, userName, loanDate });
+    const handleSave = async () => {
+        if (editingId) {
+            await updateLoan(editingId, { bookId, userName, loanDate });
+        } else {
+            await createLoan({ bookId, userName, loanDate });
+        }
         setShowModal(false);
+        setEditingId(null);
+        setBookId(books.length > 0 ? books[0].id : "");
+        setUserName("");
+        setLoanDate("");
         load();
+    };
+
+    const handleEdit = (l: Loan) => {
+        setBookId(l.bookId);
+        setUserName(l.userName);
+        setLoanDate(l.loanDate.split('T')[0]);
+        setEditingId(l.id);
+        setShowModal(true);
     };
 
     const handleDelete = async (id: string) => {
@@ -46,7 +63,13 @@ export const LoansConfig = () => {
         <div className="mt-4">
             <div className="d-flex justify-content-between mb-2">
                 <h4>Empréstimos</h4>
-                <Button onClick={() => setShowModal(true)}>Adicionar Empréstimo</Button>
+                <Button onClick={() => {
+                    setEditingId(null);
+                    setBookId(books.length > 0 ? books[0].id : "");
+                    setUserName("");
+                    setLoanDate("");
+                    setShowModal(true);
+                }}>Adicionar Empréstimo</Button>
             </div>
             <Table striped bordered hover>
                 <thead>
@@ -80,6 +103,7 @@ export const LoansConfig = () => {
                                             <Button variant="warning" size="sm" className="me-2" onClick={() => handleStatus(l.id, "extraviado")}>Extraviar</Button>
                                         </>
                                     )}
+                                    <Button variant="primary" size="sm" className="me-2" onClick={() => handleEdit(l)}>Editar</Button>
                                     <Button variant="danger" size="sm" onClick={() => handleDelete(l.id)}>Excluir</Button>
                                 </td>
                             </tr>
@@ -90,7 +114,7 @@ export const LoansConfig = () => {
 
             <Modal show={showModal} onHide={() => setShowModal(false)}>
                 <Modal.Header closeButton>
-                    <Modal.Title>Adicionar Empréstimo</Modal.Title>
+                    <Modal.Title>{editingId ? "Editar Empréstimo" : "Adicionar Empréstimo"}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form>
@@ -114,7 +138,7 @@ export const LoansConfig = () => {
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowModal(false)}>Cancelar</Button>
-                    <Button variant="primary" onClick={handleCreate}>Salvar</Button>
+                    <Button variant="primary" onClick={handleSave}>Salvar</Button>
                 </Modal.Footer>
             </Modal>
         </div>
