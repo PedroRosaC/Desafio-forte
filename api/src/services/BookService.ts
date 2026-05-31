@@ -1,5 +1,5 @@
 import { pool } from "../db"
-import { v4 as uuidv4 } from "uuid"
+import { randomUUID } from "crypto"
 import { Book } from "../models/Book";
 
 class BookService {
@@ -14,7 +14,7 @@ class BookService {
     }
 
     async create(data: Omit<Book, "id">): Promise<Book> {
-        const id = uuidv4();
+        const id = randomUUID();
         await pool.query(
             'INSERT INTO books (id, title, author, publication_year) VALUES ($1, $2, $3, $4)', 
             [id, data.title, data.author, data.publicationYear]

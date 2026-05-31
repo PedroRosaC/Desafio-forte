@@ -1,5 +1,5 @@
 import { pool } from "../db";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 import { Loan } from "../models/Loan";
 
 export function calculateExpectedReturnDate(loanDate: Date): Date {
@@ -81,7 +81,7 @@ class LoanService {
     }
 
     async create(data: { bookId: string; userName: string; loanDate: string }): Promise<Loan> {
-        const id = uuidv4();
+        const id = randomUUID();
         const [year, month, day] = data.loanDate.split('T')[0].split('-').map(Number);
         const loanDate = new Date(year, month - 1, day);
         

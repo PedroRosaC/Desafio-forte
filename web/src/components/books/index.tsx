@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Table, Button, Form, Modal } from "react-bootstrap";
+import { Table, Button, Form, Modal, Alert } from "react-bootstrap";
 import { getBooks, createBook, deleteBook, Book } from "../../services/BookService";
 
 export const BooksConfig = () => {
@@ -8,6 +8,7 @@ export const BooksConfig = () => {
     const [title, setTitle] = useState("");
     const [author, setAuthor] = useState("");
     const [publicationYear, setPublicationYear] = useState("");
+    const [validationError, setValidationError] = useState("");
 
     const load = async () => {
         const data = await getBooks();
@@ -19,8 +20,17 @@ export const BooksConfig = () => {
     }, []);
 
     const handleCreate = async () => {
+        if (!title.trim() || !author.trim() || !publicationYear.trim()) {
+            setValidationError("Todos os campos são obrigatórios.");
+            return;
+        }
+
         await createBook({ title, author, publicationYear });
         setShowModal(false);
+        setTitle("");
+        setAuthor("");
+        setPublicationYear("");
+        setValidationError("");
         load();
     };
 
@@ -33,7 +43,10 @@ export const BooksConfig = () => {
         <div className="mt-4">
             <div className="d-flex justify-content-between mb-2">
                 <h4>Livros</h4>
-                <Button onClick={() => setShowModal(true)}>Adicionar Livro</Button>
+                <Button onClick={() => {
+                    setValidationError("");
+                    setShowModal(true);
+                }}>Adicionar Livro</Button>
             </div>
             <Table striped bordered hover>
                 <thead>
@@ -58,23 +71,48 @@ export const BooksConfig = () => {
                 </tbody>
             </Table>
 
-            <Modal show={showModal} onHide={() => setShowModal(false)}>
+            <Modal show={showModal} onHide={() => {
+                    setShowModal(false);
+                    setValidationError("");
+                }}>
                 <Modal.Header closeButton>
                     <Modal.Title>Adicionar Livro</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
+                    {validationError && <Alert variant="danger">{validationError}</Alert>}
                     <Form>
                         <Form.Group className="mb-3">
                             <Form.Label>Título</Form.Label>
-                            <Form.Control value={title} onChange={e => setTitle(e.target.value)} />
+                            <Form.Control
+                                value={title}
+                                isInvalid={!!validationError && !title.trim()}
+                                onChange={e => {
+                                    setTitle(e.target.value);
+                                    setValidationError("");
+                                }}
+                            />
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Autor</Form.Label>
-                            <Form.Control value={author} onChange={e => setAuthor(e.target.value)} />
+                            <Form.Control
+                                value={author}
+                                isInvalid={!!validationError && !author.trim()}
+                                onChange={e => {
+                                    setAuthor(e.target.value);
+                                    setValidationError("");
+                                }}
+                            />
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Ano de Publicação</Form.Label>
-                            <Form.Control value={publicationYear} onChange={e => setPublicationYear(e.target.value)} />
+                            <Form.Control
+                                value={publicationYear}
+                                isInvalid={!!validationError && !publicationYear.trim()}
+                                onChange={e => {
+                                    setPublicationYear(e.target.value);
+                                    setValidationError("");
+                                }}
+                            />
                         </Form.Group>
                     </Form>
                 </Modal.Body>

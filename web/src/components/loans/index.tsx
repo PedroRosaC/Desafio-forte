@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Table, Button, Form, Modal } from "react-bootstrap";
+import { Table, Button, Form, Modal, Alert } from "react-bootstrap";
 import { getLoans, createLoan, deleteLoan, updateLoanStatus, updateLoan, Loan } from "../../services/LoanService";
 import { getBooks, Book } from "../../services/BookService";
 
@@ -11,6 +11,7 @@ export const LoansConfig = () => {
     const [bookId, setBookId] = useState("");
     const [userName, setUserName] = useState("");
     const [loanDate, setLoanDate] = useState("");
+    const [validationError, setValidationError] = useState("");
 
     const load = async () => {
         const [l, b] = await Promise.all([getLoans(), getBooks()]);
@@ -24,16 +25,23 @@ export const LoansConfig = () => {
     }, []);
 
     const handleSave = async () => {
+        if (!bookId || !userName.trim() || !loanDate.trim()) {
+            setValidationError("Todos os campos são obrigatórios.");
+            return;
+        }
+
         if (editingId) {
             await updateLoan(editingId, { bookId, userName, loanDate });
         } else {
             await createLoan({ bookId, userName, loanDate });
         }
+
         setShowModal(false);
         setEditingId(null);
         setBookId(books.length > 0 ? books[0].id : "");
         setUserName("");
         setLoanDate("");
+        setValidationError("");
         load();
     };
 
@@ -68,6 +76,7 @@ export const LoansConfig = () => {
                     setBookId(books.length > 0 ? books[0].id : "");
                     setUserName("");
                     setLoanDate("");
+                    setValidationError("");
                     setShowModal(true);
                 }}>Adicionar Empréstimo</Button>
             </div>
@@ -112,15 +121,26 @@ export const LoansConfig = () => {
                 </tbody>
             </Table>
 
-            <Modal show={showModal} onHide={() => setShowModal(false)}>
+            <Modal show={showModal} onHide={() => {
+                    setShowModal(false);
+                    setValidationError("");
+                }}>
                 <Modal.Header closeButton>
                     <Modal.Title>{editingId ? "Editar Empréstimo" : "Adicionar Empréstimo"}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
+                    {validationError && <Alert variant="danger">{validationError}</Alert>}
                     <Form>
                         <Form.Group className="mb-3">
                             <Form.Label>Livro</Form.Label>
-                            <Form.Select value={bookId} onChange={e => setBookId(e.target.value)}>
+                            <Form.Select
+                                value={bookId}
+                                isInvalid={!!validationError && !bookId}
+                                onChange={e => {
+                                    setBookId(e.target.value);
+                                    setValidationError("");
+                                }}
+                            >
                                 {books.map(b => (
                                     <option key={b.id} value={b.id}>{b.title}</option>
                                 ))}
@@ -128,11 +148,26 @@ export const LoansConfig = () => {
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Usuário</Form.Label>
-                            <Form.Control value={userName} onChange={e => setUserName(e.target.value)} />
+                            <Form.Control
+                                value={userName}
+                                isInvalid={!!validationError && !userName.trim()}
+                                onChange={e => {
+                                    setUserName(e.target.value);
+                                    setValidationError("");
+                                }}
+                            />
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Data de Empréstimo</Form.Label>
-                            <Form.Control type="date" value={loanDate} onChange={e => setLoanDate(e.target.value)} />
+                            <Form.Control
+                                type="date"
+                                value={loanDate}
+                                isInvalid={!!validationError && !loanDate.trim()}
+                                onChange={e => {
+                                    setLoanDate(e.target.value);
+                                    setValidationError("");
+                                }}
+                            />
                         </Form.Group>
                     </Form>
                 </Modal.Body>

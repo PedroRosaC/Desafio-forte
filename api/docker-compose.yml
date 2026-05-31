@@ -14,6 +14,14 @@ services:
     image: p21-desafio-app
     build:
       context: .
+    depends_on:
+      - database
+    environment:
+      DB_HOST: database
+      DB_USER: admin
+      DB_PASSWORD: admin
+      DB_NAME: admin
+      DB_PORT: 5432
     ports:
       - 8080:8080
     volumes:
